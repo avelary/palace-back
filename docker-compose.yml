@@ -1,0 +1,17 @@
+services:
+  postgres:
+    image: bitnami/postgresql:latest
+    container_name: ecommerce
+    environment:
+      - POSTGRESQL_USER=avelar
+      - POSTGRESQL_PASSWORD=avelar1million
+      - POSTGRESQL_DATABASE=ecommerce
+    ports:
+      - 5432:5432
+    volumes:
+      - postgres_data:/bitnami/postgresql
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local

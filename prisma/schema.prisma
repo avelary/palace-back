@@ -1,0 +1,206 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum StatusSelect {
+  released
+  suspended
+  blocked
+}
+
+enum GenderSelect {
+  male
+  female
+  unisex
+}
+
+enum OrderStatus {
+  pending
+  paid
+  shipped
+  delivered
+  canceled
+}
+
+enum PaymentStatus {
+  pending
+  cancel
+  completed
+}
+
+enum PaymentMethod {
+  credit_card
+  pix
+  boleto
+  paypal
+}
+
+enum RoleSelect {
+  user
+  manager
+}
+
+model User {
+  id        String      @id @default(uuid())
+  name      String
+  email     String      @unique
+  password  String
+  role RoleSelect
+  gender    GenderSelect
+  image     String
+  carts     Cart[]
+  wishlists Wishlist[]
+  addresses Address[]
+  orders Order[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+
+model Product {
+  id          String        @id @default(uuid())
+  title       String
+  description String
+  volume      String
+  brand       String
+  status      StatusSelect
+  gender      GenderSelect
+  price       Float
+  marketPrice Float
+  costPrice Float
+  inventory   Inventory?
+  cartItems   CartItem[]
+  wishlists   Wishlist[]
+  orderItems OrderItem[]
+  attachments Attachment[]
+
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+
+  @@map("products")
+}
+
+model Attachment {
+  id String @id @unique
+  productId String   @map("product_id") 
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  url String
+
+  @@map("attachments")
+}
+
+model Order {
+  id            String   @id @default(uuid())
+  userId    String     @map("user_id")
+  user      User       @relation(fields: [userId], references: [id])
+  totalAmount Float @map("total_amount")
+  status OrderStatus
+  address String
+  payments Payment[]
+  orderItems OrderItem[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  @@map("orders")
+}
+
+model OrderItem {
+  id String @id @default(uuid())
+  orderId       String   @map("order_id")
+  order Order @relation(fields: [orderId], references: [id])
+  productId String   @map("product_id")
+  product   Product  @relation(fields: [productId], references: [id])
+  quantity Float
+
+  createdAt DateTime @default(now()) @map("created_at")
+  @@map("order_items")
+}
+
+model Payment {
+  id            String   @id @default(uuid())
+  orderId       String   @map("order_id")
+  order Order @relation(fields: [orderId], references: [id])
+  amount        Float
+  status PaymentStatus
+  paymentMethod PaymentMethod @map("payment_method")
+  transactionId String   @map("transaction_id")
+
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@map("payments")
+}
+
+model Cart {
+  id        String     @id @default(uuid())
+  userId    String     @map("user_id")
+  user      User       @relation(fields: [userId], references: [id])
+  cartItems CartItem[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("carts")
+}
+
+model CartItem {
+  id        String   @id @default(uuid())
+  cartId    String   @map("cart_id")
+  cart      Cart     @relation(fields: [cartId], references: [id])
+  productId String   @map("product_id")
+  product   Product  @relation(fields: [productId], references: [id])
+  quantity  Int
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("cart_items")
+}
+
+model Inventory {
+  id                 String   @id @default(uuid())
+  productId          String   @map("product_id") @unique
+  product            Product  @relation(fields: [productId], references: [id])
+  quantityAvailable  Int      @map("quantity_available")
+  warehouseLocation  String   @map("ware_house_location")
+
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  @@map("inventory")
+}
+
+model Wishlist {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  productId String   @map("product_id")
+
+  user      User     @relation(fields: [userId], references: [id])
+  product   Product  @relation(fields: [productId], references: [id])
+  
+  createdAt DateTime @default(now()) @map("created_at")
+  @@map("wishlists")
+}
+
+model Address {
+  id                String   @id @default(uuid())
+  userId            String   @map("user_id")
+  user              User     @relation(fields: [userId], references: [id])
+  name              String
+  street            String
+  number            String
+  additionalInfo    String
+  city              String
+  state             String
+  zipCode           String   @map("zip_code")
+  country           String
+
+  createdAt DateTime @default(now()) @map("created_at")
+  @@map("addresses")
+}
